@@ -1,0 +1,16 @@
+{
+  "name": "mc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "reader.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mike Frey <frey.mike@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "minecraft-mca": "git+https://github.com/maxogden/minecraft-mca.git",
+    "minecraft-nbt": "0.0.3",
+    "minecraft-region": "git+https://github.com/maxogden/minecraft-region.git"
+  }
+}
