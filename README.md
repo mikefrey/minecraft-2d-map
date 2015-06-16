@@ -1,6 +1,8 @@
 # minecraft-2d-map
 Generate 2d maps of a Minecraft world
 
+![Example](https://raw.githubusercontent.com/mikefrey/minecraft-2d-map/master/world.png)
+
 # Installation
 
 1. Install Node.js >= 0.12 or io.js
