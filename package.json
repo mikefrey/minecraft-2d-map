@@ -1,16 +1,17 @@
 {
-  "name": "mc",
+  "name": "minecraft-2d-map",
   "version": "1.0.0",
   "description": "",
   "main": "reader.js",
   "scripts": {
+    "start": "node server.js",
+    "watch": "nodemon -w . server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Mike Frey <frey.mike@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "minecraft-mca": "git+https://github.com/maxogden/minecraft-mca.git",
-    "minecraft-nbt": "0.0.3",
-    "minecraft-region": "git+https://github.com/maxogden/minecraft-region.git"
+    "glob": "^5.0.10",
+    "minecraft-nbt": "0.0.3"
   }
 }
