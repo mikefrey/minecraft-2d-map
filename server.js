@@ -1,13 +1,18 @@
 var http = require('http')
 var Path = require('path')
 var region = require('./reader')
+var regionList = require('./regionlist')
 var config = require('./config')
+var Watcher = require('./watcher')
 
 var regionBasePath = config.regionPath || __dirname+'/world'
 var staticBasePath = Path.join(__dirname, 'public')
 
+var watcher = new Watcher(regionBasePath)
+// watcher.start()
+
 var staticRx = /\.(js|html|png)/i
-var regionRx = /^\/region\/(-?\d+)\/(-?\d+)$/i
+var regionRx = /^\/regions\/(-?\d+)\/(-?\d+)$/i
 
 var server = http.createServer(function(req, res) {
   if (staticRx.test(req.url) || req.url === '/') {
@@ -18,8 +23,12 @@ var server = http.createServer(function(req, res) {
     return serveRegion(req, res)
   }
 
-  if (req.url == '/filelist') {
-    return serveFileList(req, res)
+  if (req.url == '/regions') {
+    return serveRegionList(req, res)
+  }
+
+  if (req.url == '/info') {
+    return serveInfo(req, res)
   }
 
   res.write(req.url)
@@ -31,17 +40,8 @@ server.listen(8000, function() {
 })
 
 
-function serveFileList(req, res) {
-  var glob = require('glob')
-  glob('*.mca', { cwd:regionBasePath }, function(err, files) {
-    var mcaRx = /(-?\d+)\.(-?\d+)/
-    var regions = files.map(function(file) {
-      var matches = file.match(mcaRx)
-      return {
-        x: parseInt(matches[1], 10),
-        z: parseInt(matches[2], 10)
-      }
-    })
+function serveRegionList(req, res) {
+  regionList(regionBasePath, function(err, regions) {
     res.write(JSON.stringify(regions))
     res.end()
   })
@@ -49,18 +49,17 @@ function serveFileList(req, res) {
 
 
 function serveRegion(req, res) {
+  var fs = require('fs')
   var matches = req.url.match(regionRx)
   var x = matches[1]
   var z = matches[2]
 
-
   console.log('region ', x, z)
 
-  var path = Path.join(regionBasePath, 'r.'+x+'.'+z+'.mca')
-  var data = region(path)
-  var payload = JSON.stringify(data)
-  res.write(payload)
-  res.end()
+  var path = Path.join(__dirname, 'cache', 'r.'+x+'.'+z+'.json.gz')
+  fs.createReadStream(path).pipe(res)
+  res.setHeader('content-encoding', 'gzip')
+  res.setHeader('content-type', 'application/json')
 }
 
 
@@ -69,4 +68,13 @@ function serveStatic(req, res) {
   if (path == '') path = 'index.html'
   var rs = require('fs').createReadStream(Path.join(staticBasePath, path))
   rs.pipe(res)
+}
+
+function serveInfo(req, res) {
+  var info = require('./blocks')
+  res.write(JSON.stringify({
+    blocks: info.blocks,
+    biomes: info.biomes
+  }))
+  res.end()
 }

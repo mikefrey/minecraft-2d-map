@@ -4,66 +4,80 @@ var NBTReader = require('minecraft-nbt').NBTReader
 var blockDefs = require('./blocks').blocks
 var biomeDefs = require('./blocks').biomes
 
-module.exports = function(path) {
+module.exports = function(path, callback) {
 
-  var file = fs.readFileSync(path)
-  var locs = locations(file)
+  fs.readFile(path, function(err, file) {
 
-  return locs.map(function(loc) {
-    // if (loc.offset > 2) return
-    var pos = loc.offset*4096
-    // console.log('\nOffset', loc.offset)
-    // console.log('Slice:', pos)
+    var locs = locations(file)
+    var timeInflate = totalTime()
+    var timeNbt = totalTime()
+    var timeSections = totalTime()
 
-    var lenData = file.slice(pos, pos+5)
-    var len = lenData.readIntBE(0, 4)
-    var compType = lenData.readIntBE(4, 1)
+    var data = locs.map(function(loc) {
 
-    // console.log('Chunk Length:', len)
-    // console.log('Compression Type:', compType)
+      var pos = loc.offset*4096
+      var lenData = file.slice(pos, pos+5)
+      var len = lenData.readIntBE(0, 4)
+      var compType = lenData.readIntBE(4, 1)
+      var chunkData = file.slice(pos+5, pos+5+len)
 
-    var chunkData = file.slice(pos+5, pos+5+len)
-    var chunkBinary = zlib.inflateSync(chunkData)
-    var chunk = new NBTReader(chunkBinary).read()
+      timeInflate.start()
+      var chunkBinary = zlib.inflateSync(chunkData)
+      timeInflate.end()
 
-    // console.log('X', chunk.root.Level.xPos * 16)
-    // console.log('Z', chunk.root.Level.zPos * 16)
-    // console.log('Section Count:', chunk.root.Level.Sections.length)
-    // console.log(chunk.root.Level.HeightMap[0])
-    // console.log(chunk.root.Level.Sections[0].Blocks)
-    // console.log('Biomes', chunk.root.Level.Biomes)
+      timeNbt.start()
+      var chunk = new NBTReader(chunkBinary).read()
+      timeNbt.end()
 
-    var tops = makeTops()
+      var tops = makeTops()
+      var count = 16 * 16
 
-    chunk.root.Level.Sections.forEach(function(section) {
+      timeSections.start()
+      for (var s = chunk.root.Level.Sections.length-1; s > -1; s-=1) {
+        var section = chunk.root.Level.Sections[s]
+        var blocks = section.Blocks
+        var blockArray = Object.keys(blocks)
 
-      var blocks = section.Blocks
-
-      Object.keys(blocks).forEach(function(key) {
-        var val = blocks[key]
-        var i = parseInt(key, 10)
-        var y = Math.floor(i / 256)
-        var z = Math.floor((i-(y*256))/16)
-        var x = i % 16
-
-        if (val != 0) {
+        for (var b = blockArray.length-1; b > -1; b-=1) {
+          var key = blockArray[b]
+          var val = parseInt(blocks[key], 10)
+          var i = parseInt(key, 10)
+          var y = (i / 256) | 0
+          var z = ((i-(y*256))/16) | 0
+          var x = i % 16
           var blk = tops[z][x]
-          blk.y = y + (parseInt(section.Y, 10) * 16)
-          blk.type = val
-          blk.color = blockDefs[val].color
-          blk.biome = chunk.root.Level.Biomes[z*16+x]
+
+          if (val != 0 && blk.type == 0) {
+            blk.y = y + (parseInt(section.Y, 10) * 16)
+            blk.type = val
+            blk.color = blockDefs[val].color
+            blk.biome = chunk.root.Level.Biomes[z*16+x]
+            count -= 1
+          }
+
+          if (count <= 0) break
+
         }
 
-      })
+        if (count <= 0) break
+      }
+      timeSections.end()
+
+      var payload = {
+        x: chunk.root.Level.xPos * 16,
+        z: chunk.root.Level.zPos * 16,
+        tops: tops
+      }
+      // console.log(tops)
+      return payload
     })
 
-    var payload = {
-      x: chunk.root.Level.xPos * 16,
-      z: chunk.root.Level.zPos * 16,
-      tops: tops
-    }
-    // console.log(tops)
-    return payload
+    console.log('Inflate:', timeInflate.total()/1e6)
+    console.log('NBT Read:', timeNbt.total()/1e6)
+    console.log('Sections:', timeSections.total()/1e6)
+
+    callback(err, data)
+
   })
 
 }
@@ -94,4 +108,23 @@ function makeTops() {
     }
   }
   return tops
+}
+
+
+function totalTime() {
+  var total = 0
+  var start
+  return {
+    start: function() {
+      start = process.hrtime()
+    },
+    end: function() {
+      var diff = process.hrtime(start)
+      total += diff[0] * 1e9 + diff[1]
+      start = null
+    },
+    total: function() {
+      return total
+    }
+  }
 }

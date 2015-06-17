@@ -4,6 +4,15 @@ var ctx //= cvs.getContext('2d')
 var zoom = 1
 var offsetX = 0
 var offsetZ = 0
+var blockData = {}
+var blockTypes = []
+var biomeTypes = []
+
+var elX = document.getElementById('xPos')
+var elY = document.getElementById('yPos')
+var elZ = document.getElementById('zPos')
+var elBiome = document.getElementById('biomeType')
+var elBlock = document.getElementById('blockType')
 
 function http(url, callback) {
   var xhr = new XMLHttpRequest()
@@ -20,14 +29,18 @@ function http(url, callback) {
 }
 
 function requestFileList(callback) {
-  http('/filelist', callback)
+  http('/regions', callback)
 }
 
 function requestData(x, z, callback) {
-  http('/region/'+x+'/'+z, callback)
+  http('/regions/'+x+'/'+z, callback)
 }
 
-function render(chunks) {
+function requestInfo(callback) {
+  http('/info', callback)
+}
+
+function render(ctx, mode, chunks) {
   if (!Array.isArray(chunks)) {
     chunks = [chunks]
   }
@@ -41,26 +54,50 @@ function render(chunks) {
       for (var x = 0; x < 16; x++) {
         var block = chunk.tops[z][x]
 
-        var cx = offsetX + ((startX + x) * zoom)
-        var cy = offsetZ + ((startZ + z) * zoom)
+        var sx = startX + x
+        var sz = startZ + z
+        var cx = offsetX + (sx * zoom)
+        var cy = offsetZ + (sz * zoom)
         var cw = zoom
         var ch = zoom
 
         if (block.color == 0xFF00FF)
           console.log(block.type)
 
-        ctx.fillStyle = getColor(block.color)
+        ctx.fillStyle = getColor(mode, block)
         ctx.fillRect(cx, cy, cw, ch)
-        // ctx.fill()
+
+        blockData[sx+'-'+sz] = {
+          x:sx,
+          z:sz,
+          y:block.y,
+          type:block.type,
+          biome:block.biome
+        }
       }
     }
   })
 }
 
-function getColor(num) {
-  var color = num.toString(16)
+function getColor(mode, block) {
+
+  if (mode == 'elevation') {
+    return '#' + ((block.y<<16) + (block.y<<8) + block.y).toString(16)
+  }
+
+  var color
+
+  if (mode == 'topo') {
+    color = block.color.toString(16)
+  }
+
+  if (mode == 'biome') {
+    color = biomeTypes[block.biome].color.toString(16)
+  }
+
   var length = color.length
   return '#' + ('000000'+color).substring(length, length+6)
+
 }
 
 
@@ -90,14 +127,29 @@ function setupDragging() {
       cvs.style.left = (elemX + (ev.clientX - startX)) + 'px'
       cvs.style.top = (elemY + (ev.clientY - startY)) + 'px'
 
+    } else {
+
+      var x = ((ev.clientX - elemX - offsetX) / zoom)
+      var z = ((ev.clientY - elemY - offsetZ) / zoom)
+
+      var block = blockData[x+'-'+z]
+
+      if (block) {
+        elX.innerText = block.x
+        elY.innerText = block.y
+        elZ.innerText = block.z
+        elBiome.innerText = biomeTypes[block.biome] && biomeTypes[block.biome].name || block.biome
+        elBlock.innerText = blockTypes[block.type] && blockTypes[block.type].name || block.type
+      } else {
+        elX.innerText = '-'
+        elY.innerText = '-'
+        elZ.innerText = '-'
+        elBiome.innerText = '-'
+        elBlock.innerText = '-'
+      }
+
+      // console.log(ev.clientX, ev.clientY, x, z, !!block)
     }
-  })
-
-  el.addEventListener('mousemove', function(ev) {
-    var x = ((ev.clientX - elemX - offsetX) / zoom)
-    var z = ((ev.clientY - elemY - offsetZ) / zoom)
-
-    console.log(ev.clientX, ev.clientY, x, z)
   })
 }
 
@@ -137,10 +189,18 @@ function setupCanvas(data) {
 }
 
 setupDragging()
+requestInfo(function(data) {
+  window.blockTypes = data.blocks
+  window.biomeTypes = data.biomes
 
-requestFileList(function(data) {
-  setupCanvas(data)
-  data.forEach(function(file) {
-    requestData(file.x, file.z, render)
+  requestFileList(function(data) {
+    setupCanvas(data)
+    data.forEach(function(file) {
+      requestData(file.x, file.z, function(chunks) {
+        render(ctx, 'topo', chunks)
+        // render(ctx, 'elevation', chunks)
+        // render(ctx, 'biome', chunks)
+      })
+    })
   })
 })

@@ -6,10 +6,10 @@
 */
 
 // Windows
-// exports.regionPaht = ''
+// exports.regionPath = ''
 
 // MacOSX
-// exports.regionPaht = ''
+// exports.regionPath = ''
 
 // Ubuntu
-// exports.regionPath = '/home/user/.minecraft/saves/MyWorld/region'
+exports.regionPath = '/home/mike/.minecraft/saves/WTF/region'
