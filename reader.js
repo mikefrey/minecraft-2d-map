@@ -50,7 +50,7 @@ module.exports = function(path, callback) {
           if (val != 0 && blk.type == 0) {
             blk.y = y + (parseInt(section.Y, 10) * 16)
             blk.type = val
-            blk.color = blockDefs[val].color
+            // blk.color = blockDefs[val].color
             blk.biome = chunk.root.Level.Biomes[z*16+x]
             count -= 1
           }

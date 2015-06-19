@@ -40,7 +40,7 @@ function requestInfo(callback) {
   http('/info', callback)
 }
 
-function render(ctx, mode, chunks) {
+function prepare(chunks) {
   if (!Array.isArray(chunks)) {
     chunks = [chunks]
   }
@@ -56,16 +56,6 @@ function render(ctx, mode, chunks) {
 
         var sx = startX + x
         var sz = startZ + z
-        var cx = offsetX + (sx * zoom)
-        var cy = offsetZ + (sz * zoom)
-        var cw = zoom
-        var ch = zoom
-
-        if (block.color == 0xFF00FF)
-          console.log(block.type)
-
-        ctx.fillStyle = getColor(mode, block)
-        ctx.fillRect(cx, cy, cw, ch)
 
         blockData[sx+'-'+sz] = {
           x:sx,
@@ -79,6 +69,24 @@ function render(ctx, mode, chunks) {
   })
 }
 
+function render(ctx, mode, chunks) {
+  Object.keys(blockData).forEach(function(key) {
+    var block = blockData[key]
+
+    var cx = offsetX + (block.x * zoom)
+    var cy = offsetZ + (block.z * zoom)
+    var cw = zoom
+    var ch = zoom
+    var color = getColor(mode, block)
+
+    if (color == '#FF00FF')
+      console.log(block.type)
+
+    ctx.fillStyle = color
+    ctx.fillRect(cx, cy, cw, ch)
+  })
+}
+
 function getColor(mode, block) {
 
   if (mode == 'elevation') {
@@ -88,16 +96,14 @@ function getColor(mode, block) {
   var color
 
   if (mode == 'topo') {
-    color = block.color.toString(16)
+    color = blockTypes[block.type].color.toString(16)
   }
-
-  if (mode == 'biome') {
+  else if (mode == 'biome') {
     color = biomeTypes[block.biome].color.toString(16)
   }
 
   var length = color.length
   return '#' + ('000000'+color).substring(length, length+6)
-
 }
 
 
@@ -153,6 +159,20 @@ function setupDragging() {
   })
 }
 
+function setupModes() {
+  var nodes = document.querySelectorAll('input[name="map-mode"]')
+  var elems = Array.prototype.slice.call(nodes)
+
+  elems.forEach(function(el) {
+    el.addEventListener('click', function(ev) {
+      var input = ev.toElement
+      if (input.checked) {
+        render(ctx, input.value)
+      }
+    })
+  })
+}
+
 
 function setupCanvas(data) {
   var rangeX = {min:0, max:0}
@@ -189,18 +209,26 @@ function setupCanvas(data) {
 }
 
 setupDragging()
+setupModes()
+
 requestInfo(function(data) {
   window.blockTypes = data.blocks
   window.biomeTypes = data.biomes
 
   requestFileList(function(data) {
     setupCanvas(data)
+
+    var remaining = data.length
     data.forEach(function(file) {
       requestData(file.x, file.z, function(chunks) {
-        render(ctx, 'topo', chunks)
-        // render(ctx, 'elevation', chunks)
-        // render(ctx, 'biome', chunks)
+        prepare(chunks)
+        remaining--
+
+        if (!remaining) {
+          render(ctx, 'topo')
+        }
       })
     })
+
   })
 })

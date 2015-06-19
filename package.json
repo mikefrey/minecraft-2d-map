@@ -13,6 +13,7 @@
   "dependencies": {
     "async": "^1.2.1",
     "glob": "^5.0.10",
-    "minecraft-nbt": "0.0.3"
+    "minecraft-nbt": "0.0.3",
+    "pngjs": "^0.4.0"
   }
 }

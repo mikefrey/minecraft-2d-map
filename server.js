@@ -9,7 +9,7 @@ var regionBasePath = config.regionPath || __dirname+'/world'
 var staticBasePath = Path.join(__dirname, 'public')
 
 var watcher = new Watcher(regionBasePath)
-// watcher.start()
+watcher.start()
 
 var staticRx = /\.(js|html|png)/i
 var regionRx = /^\/regions\/(-?\d+)\/(-?\d+)$/i

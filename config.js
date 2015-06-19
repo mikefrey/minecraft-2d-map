@@ -12,4 +12,4 @@
 // exports.regionPath = ''
 
 // Ubuntu
-exports.regionPath = '/home/mike/.minecraft/saves/WTF/region'
+// exports.regionPath = '/home/mike/.minecraft/saves/WTF/region'
