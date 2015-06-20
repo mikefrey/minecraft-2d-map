@@ -1,5 +1,4 @@
 var cvs = document.getElementById('cvs')
-var ctx //= cvs.getContext('2d')
 
 var zoom = 1
 var offsetX = 0
@@ -69,43 +68,6 @@ function prepare(chunks) {
   })
 }
 
-function render(ctx, mode, chunks) {
-  Object.keys(blockData).forEach(function(key) {
-    var block = blockData[key]
-
-    var cx = offsetX + (block.x * zoom)
-    var cy = offsetZ + (block.z * zoom)
-    var cw = zoom
-    var ch = zoom
-    var color = getColor(mode, block)
-
-    if (color == '#FF00FF')
-      console.log(block.type)
-
-    ctx.fillStyle = color
-    ctx.fillRect(cx, cy, cw, ch)
-  })
-}
-
-function getColor(mode, block) {
-
-  if (mode == 'elevation') {
-    return '#' + ((block.y<<16) + (block.y<<8) + block.y).toString(16)
-  }
-
-  var color
-
-  if (mode == 'topo') {
-    color = blockTypes[block.type].color.toString(16)
-  }
-  else if (mode == 'biome') {
-    color = biomeTypes[block.biome].color.toString(16)
-  }
-
-  var length = color.length
-  return '#' + ('000000'+color).substring(length, length+6)
-}
-
 
 function setupDragging() {
   var el = cvs.parentNode
@@ -135,39 +97,41 @@ function setupDragging() {
 
     } else {
 
-      var x = ((ev.clientX - elemX - offsetX) / zoom)
-      var z = ((ev.clientY - elemY - offsetZ) / zoom)
+      // var x = ((ev.clientX - elemX - offsetX) / zoom)
+      // var z = ((ev.clientY - elemY - offsetZ) / zoom)
 
-      var block = blockData[x+'-'+z]
+      // var block = blockData[x+'-'+z]
 
-      if (block) {
-        elX.innerText = block.x
-        elY.innerText = block.y
-        elZ.innerText = block.z
-        elBiome.innerText = biomeTypes[block.biome] && biomeTypes[block.biome].name || block.biome
-        elBlock.innerText = blockTypes[block.type] && blockTypes[block.type].name || block.type
-      } else {
-        elX.innerText = '-'
-        elY.innerText = '-'
-        elZ.innerText = '-'
-        elBiome.innerText = '-'
-        elBlock.innerText = '-'
-      }
-
-      // console.log(ev.clientX, ev.clientY, x, z, !!block)
+      // if (block) {
+      //   elX.innerText = block.x
+      //   elY.innerText = block.y
+      //   elZ.innerText = block.z
+      //   elBiome.innerText = biomeTypes[block.biome] && biomeTypes[block.biome].name || block.biome
+      //   elBlock.innerText = blockTypes[block.type] && blockTypes[block.type].name || block.type
+      // } else {
+      //   elX.innerText = '-'
+      //   elY.innerText = '-'
+      //   elZ.innerText = '-'
+      //   elBiome.innerText = '-'
+      //   elBlock.innerText = '-'
+      // }
     }
   })
 }
 
+var slice = Array.prototype.slice
 function setupModes() {
   var nodes = document.querySelectorAll('input[name="map-mode"]')
-  var elems = Array.prototype.slice.call(nodes)
+  var elems = slice.call(nodes)
 
   elems.forEach(function(el) {
     el.addEventListener('click', function(ev) {
       var input = ev.toElement
       if (input.checked) {
-        render(ctx, input.value)
+        var imgs = slice.call(document.querySelectorAll('#cvs img'))
+        imgs.forEach(function(img) {
+          img.src = img.src.substring(0, img.src.lastIndexOf('-')) + '-' + input.value + '.png'
+        })
       }
     })
   })
@@ -191,21 +155,18 @@ function setupCanvas(data) {
   cvs.width = deltaX * 512 * zoom
   cvs.height = deltaZ * 512 * zoom
 
-  offsetX = rangeX.min * -512 * zoom
-  offsetZ = rangeZ.min * -512 * zoom
+  cvs.style.top = (deltaZ * 512 * zoom) / 2 + (window.innerHeight/2)
+  cvs.style.left = (deltaX * 512 * zoom) / 2 + (window.innerWidth/2)
 
-  ctx = cvs.getContext('2d')
+}
 
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'
-  for (var x = 0; x < cvs.width; x += 512*zoom) {
-    console.count('x')
-    ctx.fillRect(x*zoom, 0, 256*zoom, cvs.height)
-  }
-  for (var z = 0; z < cvs.height; z += 512*zoom) {
-    console.count('z')
-    ctx.fillRect(0, z*zoom, cvs.width, 256*zoom)
-  }
-
+function addImg(file) {
+  var img = document.createElement('img')
+  img.src = '/cache/r.' + file.x + '.' + file.z + '-topo.png'
+  img.style.top = (file.z * 512 * zoom) + 'px'
+  img.style.left = (file.x * 512 * zoom) + 'px'
+  img.draggable = false
+  cvs.appendChild(img)
 }
 
 setupDragging()
@@ -217,18 +178,6 @@ requestInfo(function(data) {
 
   requestFileList(function(data) {
     setupCanvas(data)
-
-    var remaining = data.length
-    data.forEach(function(file) {
-      requestData(file.x, file.z, function(chunks) {
-        prepare(chunks)
-        remaining--
-
-        if (!remaining) {
-          render(ctx, 'topo')
-        }
-      })
-    })
-
+    data.forEach(addImg)
   })
 })

@@ -4,14 +4,15 @@ var PNG = require('pngjs').PNG
 var blockTypes = require('./blocks').blocks
 var biomeTypes = require('./blocks').biomes
 
-var path = __dirname + '/world/r.0.0.mca'
-var dest = __dirname + '/cache/r.0.0.png'
-region(path, function(err, chunks) {
-  render(chunks, dest, 'elevation')
-})
+// var path = __dirname + '/world/r.-1.-1.mca'
+// var dest = __dirname + '/cache/r.-1.-1.png'
+// region(path, function(err, chunks) {
+//   render(chunks, dest, 'elevation', function(){})
+// })
 
+module.exports = render
 
-function render(chunks, dest, mode) {
+function render(chunks, dest, mode, callback) {
 
   var getColor = colorModeFuncs[mode]
 
@@ -20,10 +21,14 @@ function render(chunks, dest, mode) {
     .on('parsed', function() {
       var png = this.data
 
+      // console.log('Chunks', chunks.length)
+
       chunks.forEach(function(chunk) {
 
-        var startX = chunk.x % 512
-        var startZ = chunk.z % 512
+        var startX = Math.abs(chunk.rx) //% 512
+        var startZ = Math.abs(chunk.rz) //% 512
+
+        // console.log(chunk.rx, chunk.rz, '::', startX, startZ)
 
         for (var z = 0; z < 16; z++) {
           for (var x = 0; x < 16; x++) {
@@ -42,7 +47,9 @@ function render(chunks, dest, mode) {
 
       })
 
-      this.pack().pipe(fs.createWriteStream(dest))
+      this.pack()
+        .pipe(fs.createWriteStream(dest))
+        .on('close', callback)
 
     })
 }
@@ -66,7 +73,8 @@ var colorModeFuncs = {
   },
 
   biome: function(block) {
-    return biomeTypes[block.biome].color
+    var biome = biomeTypes[block.biome]
+    return biome && biome.color || 0x000000
   }
 }
 

@@ -4,15 +4,17 @@ var NBTReader = require('minecraft-nbt').NBTReader
 var blockDefs = require('./blocks').blocks
 var biomeDefs = require('./blocks').biomes
 
+var pathRx = /r\.(-?\d+)\.(-?\d+)\.mca$/i
+
 module.exports = function(path, callback) {
+
+  var m = path.match(pathRx)
+  var px = parseInt(m[1], 10)
+  var pz = parseInt(m[2], 10)
 
   fs.readFile(path, function(err, file) {
 
     var locs = locations(file)
-    var timeInflate = totalTime()
-    var timeNbt = totalTime()
-    var timeSections = totalTime()
-
     var data = locs.map(function(loc) {
 
       var pos = loc.offset*4096
@@ -20,19 +22,12 @@ module.exports = function(path, callback) {
       var len = lenData.readIntBE(0, 4)
       var compType = lenData.readIntBE(4, 1)
       var chunkData = file.slice(pos+5, pos+5+len)
-
-      timeInflate.start()
       var chunkBinary = zlib.inflateSync(chunkData)
-      timeInflate.end()
-
-      timeNbt.start()
       var chunk = new NBTReader(chunkBinary).read()
-      timeNbt.end()
 
       var tops = makeTops()
       var count = 16 * 16
 
-      timeSections.start()
       for (var s = chunk.root.Level.Sections.length-1; s > -1; s-=1) {
         var section = chunk.root.Level.Sections[s]
         var blocks = section.Blocks
@@ -50,7 +45,6 @@ module.exports = function(path, callback) {
           if (val != 0 && blk.type == 0) {
             blk.y = y + (parseInt(section.Y, 10) * 16)
             blk.type = val
-            // blk.color = blockDefs[val].color
             blk.biome = chunk.root.Level.Biomes[z*16+x]
             count -= 1
           }
@@ -61,20 +55,20 @@ module.exports = function(path, callback) {
 
         if (count <= 0) break
       }
-      timeSections.end()
+
+      var cx = chunk.root.Level.xPos * 16
+      var cz = chunk.root.Level.zPos * 16
 
       var payload = {
-        x: chunk.root.Level.xPos * 16,
-        z: chunk.root.Level.zPos * 16,
+        x: cx,
+        z: cz,
+        rx: px * 512 - cx,
+        rz: pz * 512 - cz,
         tops: tops
       }
-      // console.log(tops)
+
       return payload
     })
-
-    console.log('Inflate:', timeInflate.total()/1e6)
-    console.log('NBT Read:', timeNbt.total()/1e6)
-    console.log('Sections:', timeSections.total()/1e6)
 
     callback(err, data)
 

@@ -1,4 +1,5 @@
 var region = require('./reader')
+var toPng = require('./to-png')
 var regionList = require('./regionlist')
 var async = require('async')
 var Path = require('path')
@@ -13,7 +14,8 @@ module.exports = function(regionPath) {
 
   function processRegions() {
     regionList(regionPath, function(err, regions) {
-      async.eachLimit(regions, 2, cacheRegion, function() {
+      async.eachLimit(regions, 4, cacheRegion, function() {
+        console.log('All Regions Processed')
         timer = setTimeout(processRegions, 5*60*1000)
       })
     })
@@ -30,24 +32,19 @@ module.exports = function(regionPath) {
         return callback()
       }
 
+      modifiedTimes[x+'-'+z] = mtime
+
       region(path, function(err, data) {
-        var payload = JSON.stringify(data)
-        var cachePath = Path.join(__dirname, 'cache', 'r.'+x+'.'+z+'.json.gz')
-        var gz = zlib.createGzip()
-        var ws = fs.createWriteStream(cachePath, {encoding:'binary'})
-        console.log('Writing to', cachePath)
-        gz.pipe(ws)
-        gz.write(payload, 'utf8')
-        gz.end(function() {
-          modifiedTimes[x+'-'+z] = stats.mtime
-          callback()
-        })
+        async.eachSeries(['topo', 'elevation', 'biome'], function(mode, callback) {
+          var dest = Path.join(__dirname, 'cache', 'r.'+x+'.'+z+'-'+mode+'.png')
+          toPng(data, dest, mode, callback)
+        }, callback)
       })
     })
   }
 
   function removeExistingCache() {
-    var files = glob.sync(Path.join('cache', '*.json.gz'))
+    var files = glob.sync(Path.join('cache', '*.png'))
     files.forEach(function(file) {
       fs.unlinkSync(Path.join(__dirname, file))
     })

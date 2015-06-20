@@ -264,4 +264,6 @@ biomes[165] = { color: 0xFF00FF, name: 'Mesa (Bryce)' }
 biomes[166] = { color: 0xFF00FF, name: 'Mesa Plateau F M' }
 biomes[167] = { color: 0xFF00FF, name: 'Mesa Plateau M' }
 
+biomes[undefined] = { color: 0x000000, name: 'ndefined' }
+
 exports.biomes = biomes

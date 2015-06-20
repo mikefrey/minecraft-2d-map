@@ -7,6 +7,7 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      background-color:#333333;
     }
     #container {
       width: 100%;
@@ -14,8 +15,14 @@
       position: relative;
       overflow: hidden;
     }
-    #container canvas {
+    #container div {
       position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #container div img {
+      position: absolute;
+      display: block;
       top: 0;
       left: 0;
     }
@@ -52,7 +59,7 @@
 </head>
 <body>
   <div id="container">
-    <canvas id="cvs"></canvas>
+    <div id="cvs"></div>
   </div>
   <div id="inspector">
     <div>
