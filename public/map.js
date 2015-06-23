@@ -6,12 +6,27 @@ var offsetZ = 0
 var blockData = {}
 var blockTypes = []
 var biomeTypes = []
+var images = []
 
 var elX = document.getElementById('xPos')
-var elY = document.getElementById('yPos')
+// var elY = document.getElementById('yPos')
 var elZ = document.getElementById('zPos')
-var elBiome = document.getElementById('biomeType')
-var elBlock = document.getElementById('blockType')
+// var elBiome = document.getElementById('biomeType')
+// var elBlock = document.getElementById('blockType')
+
+
+function debounce(func, wait) {
+  var timeout
+  return function() {
+    var context = this, args = arguments
+    var later = function() {
+      timeout = null
+      func.apply(context, args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}
 
 function http(url, callback) {
   var xhr = new XMLHttpRequest()
@@ -37,6 +52,10 @@ function requestData(x, z, callback) {
 
 function requestInfo(callback) {
   http('/info', callback)
+}
+
+function requestLocations(callback) {
+  http('/locations.json', callback)
 }
 
 function prepare(chunks) {
@@ -69,10 +88,10 @@ function prepare(chunks) {
 }
 
 
+var elemX = window.innerWidth/2
+var elemY = window.innerHeight/2
 function setupDragging() {
   var el = cvs.parentNode
-  var elemX = 0
-  var elemY = 0
   var startX = 0
   var startY = 0
   var dragging = false
@@ -97,15 +116,15 @@ function setupDragging() {
 
     } else {
 
-      // var x = ((ev.clientX - elemX - offsetX) / zoom)
-      // var z = ((ev.clientY - elemY - offsetZ) / zoom)
+      var x = Math.floor((ev.clientX - elemX - offsetX) / zoom)
+      var z = Math.floor((ev.clientY - elemY - offsetZ) / zoom)
 
       // var block = blockData[x+'-'+z]
 
       // if (block) {
-      //   elX.innerText = block.x
+         elX.innerText = x //block.x
       //   elY.innerText = block.y
-      //   elZ.innerText = block.z
+         elZ.innerText = z //block.z
       //   elBiome.innerText = biomeTypes[block.biome] && biomeTypes[block.biome].name || block.biome
       //   elBlock.innerText = blockTypes[block.type] && blockTypes[block.type].name || block.type
       // } else {
@@ -117,6 +136,60 @@ function setupDragging() {
       // }
     }
   })
+
+  el.addEventListener('wheel', function(ev) {
+    if (ev.deltaY > 0) {
+      zoom = Math.min(zoom * 2, 8)
+    }
+    else if (ev.deltaY < 0) {
+      zoom = Math.max(zoom / 2, 0.25)
+    }
+    console.log(zoom)
+    zoomMap()
+  })
+}
+
+
+var zoomMap = debounce(function() {
+  console.log('zoom map')
+
+}, 300)
+
+
+function setupLocations() {
+  requestLocations(function(data) {
+    var html = ''
+    for (var cat in data) {
+      html += '<div><h4>'+cat+'</h4><ul>'
+      for (var loc in data[cat]) {
+        var coords = JSON.stringify(data[cat][loc])
+        html += '<li><a href="#" data-loc="'+coords+'">'+loc+'</a></li>'
+      }
+      html += '</ul></div>'
+    }
+
+    var el = document.getElementById('locations')
+    el.innerHTML = html
+
+    el.addEventListener('click', function(ev) {
+      ev.preventDefault && ev.preventDefault()
+      var a = ev.target
+      if (a.nodeName !== 'A') return
+
+      var coords = JSON.parse(a.dataset.loc)
+      gotoCoords(coords)
+    })
+  })
+}
+
+function gotoCoords(coords) {
+  var h = cvs.parentNode.clientHeight
+  var w = cvs.parentNode.clientWidth
+  elemX = coords[0] * -1 * zoom + (w/2)
+  elemY = coords[2] * -1 * zoom + (h/2)
+
+  cvs.style.left = elemX + 'px'
+  cvs.style.top = elemY + 'px'
 }
 
 var slice = Array.prototype.slice
@@ -128,8 +201,7 @@ function setupModes() {
     el.addEventListener('click', function(ev) {
       var input = ev.toElement
       if (input.checked) {
-        var imgs = slice.call(document.querySelectorAll('#cvs img'))
-        imgs.forEach(function(img) {
+        images.forEach(function(img) {
           img.src = img.src.substring(0, img.src.lastIndexOf('-')) + '-' + input.value + '.png'
         })
       }
@@ -155,8 +227,11 @@ function setupCanvas(data) {
   cvs.width = deltaX * 512 * zoom
   cvs.height = deltaZ * 512 * zoom
 
-  cvs.style.top = (deltaZ * 512 * zoom) / 2 + (window.innerHeight/2)
-  cvs.style.left = (deltaX * 512 * zoom) / 2 + (window.innerWidth/2)
+  // cvs.style.top = (((deltaZ * 512 * zoom) / 2) + (window.innerHeight/2)) + 'px'
+  // cvs.style.left = (((deltaX * 512 * zoom) / 2) + (window.innerHeight/2)) + 'px'
+
+  cvs.style.top = cvs.parentNode.clientHeight/2 + 'px'
+  cvs.style.left = cvs.parentNode.clientWidth/2 + 'px'
 
 }
 
@@ -167,6 +242,7 @@ function addImg(file) {
   img.style.left = (file.x * 512 * zoom) + 'px'
   img.draggable = false
   cvs.appendChild(img)
+  return img
 }
 
 setupDragging()
@@ -178,6 +254,7 @@ requestInfo(function(data) {
 
   requestFileList(function(data) {
     setupCanvas(data)
-    data.forEach(addImg)
+    images = data.map(addImg)
+    setupLocations()
   })
 })

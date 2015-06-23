@@ -50,7 +50,7 @@ module.exports = function(regionPath) {
     })
   }
 
-  removeExistingCache()
+  // removeExistingCache()
 
 
   return {

@@ -1,0 +1,28 @@
+{
+  "Locations": {
+    "Spawn": [-220, 70, 256],
+    "Castle Spawn": [-207, 105, 398],
+    "Underwater Base": [-243, 58, 254],
+    "Castle Laketown": [-883, 73, 710],
+    "Lora’s Cabin": [-514, 64, 498],
+    "Skyhold": [-772, 184, 854],
+    "Volcano Base": [-1189, 41, 283],
+    "Tree of Life": [-5960, 65, 1300]
+  },
+
+  "Villages": {
+    "Spawn": [-380, 71, 337],
+    "Village 2": [849,119,2283],
+    "Village 3": [2289,82,2731],
+    "Village 4 (Desert)": [-3915,66,730],
+    "Village 5 (Large - Plains)": [ -1529, 75, -5950],
+    "Village 6": [-1346, 75, -6340]
+  },
+
+  "Temples": {
+    "Water Temple 1": [0, 100, 0],
+    "Water Temple 2": [-3304, 100, 758],
+    "Desert Temple": [-890, 103, -3050],
+    "Jungle Temple": [-5898, 79, 1763]
+  }
+}

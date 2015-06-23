@@ -9,9 +9,12 @@
       height: 100%;
       background-color:#333333;
     }
+    body {
+      display: flex;
+      align-items: stretch;
+    }
     #container {
-      width: 100%;
-      height: 100%;
+      flex-grow: 1;
       position: relative;
       overflow: hidden;
     }
@@ -28,52 +31,75 @@
     }
 
     #inspector {
-      position: absolute;
+      position:relative;
+      width: 200px;
       top: 0;
       left: 0;
       background-color: #DFDFDF;
-      border-bottom: 2px solid #555555;
-      width: 100%;
-      line-height: 40px;
+      border-right: 2px solid #555555;
+      /*line-height: 40px;*/
     }
     #inspector span {
       display: inline-block;
       margin-right: 30px;
     }
-    #inspector div {
-      display: inline-block;
-      margin-left: 40px;
+    #inspector > div {
+      display: block;
+      margin-left: 20px;
     }
 
     #inspector i {
+      display:inline-block;
       font-style: normal;
       cursor: pointer;
+      padding: 4px;
     }
     #inspector input[type=radio] {
-      visibility: hidden;
+      display: none;
     }
     #inspector input[type=radio]:checked+i {
       font-weight: bold;
+      background-color: #bbb;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    a, a:visited {
+      color: black;
+      text-decoration: none;
+    }
+    a:hover {
+      color: blue;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <div id="container">
-    <div id="cvs"></div>
-  </div>
   <div id="inspector">
     <div>
-      x: <span id="xPos"></span>
-      y: <span id="yPos"></span>
-      z: <span id="zPos"></span>
-      biome: <span id="biomeType"></span>
-      block: <span id="blockType"></span>
+      <h3>Coords</h3>
+      x: <span id="xPos"></span><br>
+      <!--y: <span id="yPos"></span>-->
+      z: <span id="zPos"></span><br>
+      <!-- biome: <span id="biomeType"></span><br>
+      block: <span id="blockType"></span> -->
     </div>
     <div>
-      <label><input type="radio" name="map-mode" value="topo" checked /> <i>Topographic</i></label>
-      <label><input type="radio" name="map-mode" value="elevation"/> <i>Elevation</i></label>
+      <h3>Map Modes</h3>
+      <label><input type="radio" name="map-mode" value="topo" checked /> <i>Topographic</i></label><br>
+      <label><input type="radio" name="map-mode" value="elevation"/> <i>Elevation</i></label><br>
       <label><input type="radio" name="map-mode" value="biome"/> <i>Biome</i></label>
     </div>
+    <div>
+      <h3>Jump to</h3>
+      <div id="locations"></div>
+    </div>
+  </div>
+  <div id="container">
+    <div id="cvs"></div>
   </div>
   <script src="/map.js"></script>
 </body>
