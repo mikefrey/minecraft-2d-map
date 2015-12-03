@@ -9,7 +9,7 @@
 // exports.regionPath = ''
 
 // MacOSX
-// exports.regionPath = ''
+exports.regionPath = '/Users/mikefrey/Library/Application Support/minecraft/saves/SomeWorld/region'
 
 // Ubuntu
-exports.regionPath = '/home/mike/.minecraft/saves/WTF/region'
+// exports.regionPath = '/home/mike/.minecraft/saves/WTF/region'

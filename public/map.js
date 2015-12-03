@@ -1,3 +1,5 @@
+'use strict'
+
 var cvs = document.getElementById('cvs')
 var ctx //= cvs.getContext('2d')
 
@@ -197,9 +199,9 @@ requestInfo(function(data) {
     setupCanvas(data)
     data.forEach(function(file) {
       requestData(file.x, file.z, function(chunks) {
-        render(ctx, 'topo', chunks)
+        // render(ctx, 'topo', chunks)
         // render(ctx, 'elevation', chunks)
-        // render(ctx, 'biome', chunks)
+        render(ctx, 'biome', chunks)
       })
     })
   })

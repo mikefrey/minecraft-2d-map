@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "async": "^1.2.1",
+    "bower-installer": "^1.2.0",
     "glob": "^5.0.10",
     "minecraft-nbt": "0.0.3"
   }

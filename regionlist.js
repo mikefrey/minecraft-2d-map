@@ -1,16 +1,14 @@
-var glob = require('glob')
+'use strict'
+
+const glob = require('glob')
+const mcaRx = /(-?\d+)\.(-?\d+)/
 
 module.exports = function(regionBasePath, callback) {
 
-  glob('*.mca', { cwd:regionBasePath }, function(err, files) {
-    var mcaRx = /(-?\d+)\.(-?\d+)/
-    var regions = files.map(function(file) {
-      var matches = file.match(mcaRx)
-      return {
-        x: parseInt(matches[1], 10),
-        z: parseInt(matches[2], 10)
-      }
-    })
-    callback(err, regions)
+  glob('*.mca', { cwd:regionBasePath }, (err, files) => {
+    callback(err, files.map((file) => {
+      let [_, x, z] = file.match(mcaRx)
+      return { x: parseInt(x, 10), z: parseInt(z, 10) }
+    }))
   })
 }
